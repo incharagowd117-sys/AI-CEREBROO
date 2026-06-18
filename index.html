@@ -1,0 +1,635 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Cerebro - Study Q&A Generator</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Poppins', 'Inter', sans-serif;
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 40px;
+            color: #2c3e50;
+        }
+
+        header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        header p {
+            font-size: 1.1em;
+            color: #7f8c8d;
+        }
+
+        .main-card {
+            background: white;
+            border-radius: 15px;
+            padding: 40px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
+            margin-bottom: 30px;
+        }
+
+        .upload-section {
+            margin-bottom: 30px;
+        }
+
+        .upload-section h2 {
+            font-size: 1.3em;
+            color: #2c3e50;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .upload-area {
+            border: 3px dashed #667eea;
+            border-radius: 10px;
+            padding: 40px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            background: #f8f9ff;
+        }
+
+        .upload-area:hover {
+            border-color: #764ba2;
+            background: #f0f0ff;
+            transform: scale(1.02);
+        }
+
+        .upload-area.dragover {
+            border-color: #764ba2;
+            background: #ede7f6;
+        }
+
+        .upload-area input[type="file"] {
+            display: none;
+        }
+
+        .upload-icon {
+            font-size: 3em;
+            margin-bottom: 10px;
+        }
+
+        .upload-text {
+            color: #2c3e50;
+            font-size: 1.1em;
+            margin-bottom: 5px;
+        }
+
+        .upload-subtext {
+            color: #7f8c8d;
+            font-size: 0.95em;
+        }
+
+        .marks-section {
+            margin-bottom: 30px;
+        }
+
+        .marks-section h3 {
+            font-size: 1.1em;
+            color: #2c3e50;
+            margin-bottom: 15px;
+        }
+
+        .marks-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(80px, 1fr));
+            gap: 10px;
+        }
+
+        .mark-checkbox {
+            display: none;
+        }
+
+        .mark-label {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 12px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-weight: 600;
+            color: #2c3e50;
+            background: white;
+        }
+
+        .mark-checkbox:checked + .mark-label {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-color: #667eea;
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        .mark-label:hover {
+            border-color: #667eea;
+            transform: translateY(-2px);
+        }
+
+        .button-group {
+            display: flex;
+            gap: 10px;
+            margin-top: 30px;
+        }
+
+        button {
+            flex: 1;
+            padding: 12px 20px;
+            border: none;
+            border-radius: 8px;
+            font-size: 1em;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .btn-generate {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .btn-generate:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn-generate:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .btn-download {
+            background: #27ae60;
+            color: white;
+        }
+
+        .btn-download:hover {
+            background: #229954;
+            transform: translateY(-2px);
+        }
+
+        .btn-reset {
+            background: #95a5a6;
+            color: white;
+        }
+
+        .btn-reset:hover {
+            background: #7f8c8d;
+        }
+
+        .results-section {
+            display: none;
+        }
+
+        .results-section.active {
+            display: block;
+        }
+
+        .questions-list {
+            margin-top: 20px;
+        }
+
+        .question-card {
+            background: #f8f9ff;
+            border-left: 4px solid #667eea;
+            padding: 20px;
+            margin-bottom: 20px;
+            border-radius: 8px;
+        }
+
+        .question-card.marks-5 {
+            border-left-color: #3498db;
+        }
+
+        .question-card.marks-7 {
+            border-left-color: #e67e22;
+        }
+
+        .question-card.marks-10 {
+            border-left-color: #e74c3c;
+        }
+
+        .question-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: start;
+            margin-bottom: 10px;
+        }
+
+        .question-text {
+            font-weight: 600;
+            color: #2c3e50;
+            font-size: 1.05em;
+            margin-bottom: 10px;
+        }
+
+        .marks-badge {
+            background: #e74c3c;
+            color: white;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.85em;
+            font-weight: 600;
+        }
+
+        .answer-label {
+            color: #7f8c8d;
+            font-size: 0.9em;
+            font-weight: 600;
+            margin-top: 10px;
+            margin-bottom: 5px;
+        }
+
+        .answer-text {
+            color: #2c3e50;
+            line-height: 1.6;
+            font-size: 0.95em;
+            background: white;
+            padding: 12px;
+            border-radius: 5px;
+        }
+
+        .loading {
+            display: none;
+            text-align: center;
+            padding: 40px;
+        }
+
+        .loading.active {
+            display: block;
+        }
+
+        .spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #667eea;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 20px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .message {
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            display: none;
+        }
+
+        .message.active {
+            display: block;
+        }
+
+        .message.success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+
+        .message.error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+
+        .results-header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .results-header h2 {
+            color: #2c3e50;
+            margin-bottom: 10px;
+        }
+
+        .results-info {
+            color: #7f8c8d;
+            font-size: 0.95em;
+        }
+
+        @media (max-width: 768px) {
+            header h1 {
+                font-size: 1.8em;
+            }
+
+            .main-card {
+                padding: 20px;
+            }
+
+            .marks-grid {
+                grid-template-columns: repeat(auto-fit, minmax(70px, 1fr));
+                gap: 8px;
+            }
+
+            button {
+                padding: 10px 15px;
+                font-size: 0.9em;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🧠 AI Cerebro</h1>
+            <p>Transform Your Notes into Smart Q&A Study Guide</p>
+        </header>
+
+        <div class="main-card">
+            <div class="message" id="message"></div>
+
+            <!-- Upload Section -->
+            <div class="upload-section">
+                <h2>📄 Step 1: Upload Your Notes</h2>
+                <div class="upload-area" id="uploadArea">
+                    <div class="upload-icon">📤</div>
+                    <div class="upload-text">Drag and drop your PDF here</div>
+                    <div class="upload-subtext">or click to select a file</div>
+                    <input type="file" id="fileInput" accept=".pdf">
+                </div>
+                <div id="fileInfo" style="margin-top: 10px; color: #27ae60; font-weight: 600;"></div>
+            </div>
+
+            <!-- Marks Selection -->
+            <div class="marks-section" id="marksSection" style="display: none;">
+                <h3>⭐ Step 2: Select Mark Values</h3>
+                <p style="color: #7f8c8d; margin-bottom: 15px; font-size: 0.95em;">Choose which mark values you want questions for (e.g., 5-mark, 7-mark, 10-mark)</p>
+                <div class="marks-grid">
+                    <input type="checkbox" id="marks1" class="mark-checkbox" value="1">
+                    <label for="marks1" class="mark-label">1</label>
+
+                    <input type="checkbox" id="marks2" class="mark-checkbox" value="2">
+                    <label for="marks2" class="mark-label">2</label>
+
+                    <input type="checkbox" id="marks3" class="mark-checkbox" value="3">
+                    <label for="marks3" class="mark-label">3</label>
+
+                    <input type="checkbox" id="marks4" class="mark-checkbox" value="4">
+                    <label for="marks4" class="mark-label">4</label>
+
+                    <input type="checkbox" id="marks5" class="mark-checkbox" value="5">
+                    <label for="marks5" class="mark-label">5</label>
+
+                    <input type="checkbox" id="marks6" class="mark-checkbox" value="6">
+                    <label for="marks6" class="mark-label">6</label>
+
+                    <input type="checkbox" id="marks7" class="mark-checkbox" value="7">
+                    <label for="marks7" class="mark-label">7</label>
+
+                    <input type="checkbox" id="marks8" class="mark-checkbox" value="8">
+                    <label for="marks8" class="mark-label">8</label>
+
+                    <input type="checkbox" id="marks9" class="mark-checkbox" value="9">
+                    <label for="marks9" class="mark-label">9</label>
+
+                    <input type="checkbox" id="marks10" class="mark-checkbox" value="10">
+                    <label for="marks10" class="mark-label">10</label>
+                </div>
+            </div>
+
+            <!-- Loading State -->
+            <div class="loading" id="loading">
+                <div class="spinner"></div>
+                <p style="color: #667eea; font-weight: 600;">Generating your study guide...</p>
+                <p style="color: #7f8c8d; font-size: 0.9em; margin-top: 10px;">This may take a few moments</p>
+            </div>
+
+            <!-- Results Section -->
+            <div class="results-section" id="resultsSection">
+                <div class="results-header">
+                    <h2>✨ Your Study Guide is Ready!</h2>
+                    <p class="results-info" id="resultsInfo"></p>
+                </div>
+                <div class="questions-list" id="questionsList"></div>
+            </div>
+
+            <!-- Button Group -->
+            <div class="button-group" id="buttonGroup" style="display: none;">
+                <button class="btn-generate" id="generateBtn" disabled>Generate Q&A</button>
+                <button class="btn-download" id="downloadBtn" style="display: none;">📥 Download as PDF</button>
+                <button class="btn-reset" id="resetBtn">Reset</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let selectedFile = null;
+        let generatedQuestions = [];
+
+        // Upload Area
+        const uploadArea = document.getElementById('uploadArea');
+        const fileInput = document.getElementById('fileInput');
+        const fileInfo = document.getElementById('fileInfo');
+        const marksSection = document.getElementById('marksSection');
+        const buttonGroup = document.getElementById('buttonGroup');
+        const generateBtn = document.getElementById('generateBtn');
+        const downloadBtn = document.getElementById('downloadBtn');
+        const resetBtn = document.getElementById('resetBtn');
+        const loading = document.getElementById('loading');
+        const resultsSection = document.getElementById('resultsSection');
+        const messageEl = document.getElementById('message');
+
+        // Drag and drop
+        uploadArea.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            uploadArea.classList.add('dragover');
+        });
+
+        uploadArea.addEventListener('dragleave', () => {
+            uploadArea.classList.remove('dragover');
+        });
+
+        uploadArea.addEventListener('drop', (e) => {
+            e.preventDefault();
+            uploadArea.classList.remove('dragover');
+            const files = e.dataTransfer.files;
+            if (files.length > 0) {
+                fileInput.files = files;
+                handleFileSelect();
+            }
+        });
+
+        uploadArea.addEventListener('click', () => {
+            fileInput.click();
+        });
+
+        fileInput.addEventListener('change', handleFileSelect);
+
+        function handleFileSelect() {
+            const file = fileInput.files[0];
+            if (file && file.type === 'application/pdf') {
+                selectedFile = file;
+                fileInfo.textContent = `✅ File selected: ${file.name}`;
+                marksSection.style.display = 'block';
+                buttonGroup.style.display = 'flex';
+                generateBtn.disabled = false;
+                showMessage('', '');
+            } else {
+                showMessage('Please select a valid PDF file', 'error');
+                generateBtn.disabled = true;
+                marksSection.style.display = 'none';
+                buttonGroup.style.display = 'none';
+            }
+        }
+
+        function getSelectedMarks() {
+            const checkboxes = document.querySelectorAll('.mark-checkbox:checked');
+            if (checkboxes.length === 0) {
+                showMessage('Please select at least one mark value', 'error');
+                return null;
+            }
+            return Array.from(checkboxes).map(cb => cb.value).join(',');
+        }
+
+        generateBtn.addEventListener('click', async () => {
+            const selectedMarks = getSelectedMarks();
+            if (!selectedMarks || !selectedFile) {
+                showMessage('Please select a file and at least one mark value', 'error');
+                return;
+            }
+
+            const formData = new FormData();
+            formData.append('file', selectedFile);
+            formData.append('marks', selectedMarks);
+
+            loading.classList.add('active');
+            generateBtn.disabled = true;
+            resultsSection.classList.remove('active');
+
+            try {
+                const response = await fetch('/api/upload', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                const data = await response.json();
+
+                if (response.ok && data.success) {
+                    generatedQuestions = data.questions;
+                    displayQuestions(data.questions);
+                    downloadBtn.style.display = 'flex';
+                    showMessage('', '');
+                } else {
+                    showMessage(data.error || 'Failed to generate Q&A', 'error');
+                }
+            } catch (error) {
+                showMessage('Network error: ' + error.message, 'error');
+            } finally {
+                loading.classList.remove('active');
+                generateBtn.disabled = false;
+            }
+        });
+
+        function displayQuestions(questions) {
+            const questionsList = document.getElementById('questionsList');
+            const resultsInfo = document.getElementById('resultsInfo');
+            
+            questionsList.innerHTML = '';
+            resultsInfo.textContent = `Generated ${questions.length} question${questions.length !== 1 ? 's' : ''} across selected mark values`;
+
+            questions.forEach((qa, index) => {
+                const card = document.createElement('div');
+                card.className = `question-card marks-${qa.marks}`;
+                card.innerHTML = `
+                    <div class="question-header">
+                        <div class="question-text">Q${index + 1}: ${qa.question}</div>
+                        <div class="marks-badge">${qa.marks} marks</div>
+                    </div>
+                    <div class="answer-label">Answer:</div>
+                    <div class="answer-text">${qa.answer}</div>
+                `;
+                questionsList.appendChild(card);
+            });
+
+            resultsSection.classList.add('active');
+        }
+
+        downloadBtn.addEventListener('click', async () => {
+            if (generatedQuestions.length === 0) {
+                showMessage('No questions to download', 'error');
+                return;
+            }
+
+            downloadBtn.disabled = true;
+            downloadBtn.textContent = '⏳ Generating PDF...';
+
+            try {
+                const response = await fetch('/api/download-pdf', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ questions: generatedQuestions })
+                });
+
+                if (response.ok) {
+                    const blob = await response.blob();
+                    const url = window.URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = 'study_guide_qa.pdf';
+                    document.body.appendChild(a);
+                    a.click();
+                    window.URL.revokeObjectURL(url);
+                    document.body.removeChild(a);
+                    showMessage('PDF downloaded successfully!', 'success');
+                } else {
+                    const error = await response.json();
+                    showMessage(error.error || 'Failed to download PDF', 'error');
+                }
+            } catch (error) {
+                showMessage('Download error: ' + error.message, 'error');
+            } finally {
+                downloadBtn.disabled = false;
+                downloadBtn.textContent = '📥 Download as PDF';
+            }
+        });
+
+        resetBtn.addEventListener('click', () => {
+            location.reload();
+        });
+
+        function showMessage(text, type) {
+            if (!text) {
+                messageEl.classList.remove('active');
+                return;
+            }
+            messageEl.textContent = text;
+            messageEl.className = `message active ${type}`;
+        }
+    </script>
+</body>
+</html>
